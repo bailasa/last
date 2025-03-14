@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-upload {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .add-new-patient {
+            background-color: #5cb85c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .add-new-patient:hover {
+            background-color: #449d44;
+        }
+
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .patient-table th, .patient-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .patient-table th {
+            background-color: #f2f2f2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            animation-name: animatetop;
+            animation-duration: 0.4s
+        }
+
+        @keyframes animatetop {
+            from {
+                top: -300px;
+                opacity: 0
+            }
+            to {
+                top: 0;
+                opacity: 1
+            }
+        }
+
+        .modal-content input[type=text],
+        .modal-content input[type=date],
+        .modal-content select {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .modal-content button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .modal-content button:hover {
+            opacity: 0.8;
+        }
+
+        .cancelbtn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .cancelbtn:hover {
+            background-color: #da190b;
+        }
+
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .edit-btn {
+            background-color: #008CBA;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        @media screen and (max-width: 600px) {
+            .patient-table {
+                font-size: 12px;
+            }
+
+            .patient-table th, .patient-table td {
+                padding: 6px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 20% auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="file-upload">
+        <input type="file" id="fileInput" name="file" accept=".xlsx, .xls">
+    </div>
+
+    <input type="text" id="searchInput" class="search-input" placeholder="Search patients...">
+
+    <button class="add-new-patient" onclick="openModal()">Add New Patient</button>
+
+    <table class="patient-table" id="patientTable">
+        <thead>
+        <tr>
+            <th>Pt file number</th>
+            <th>hospital name</th>
+            <th>date</th>
+            <th>DEATH</th>
+            <th>Gender</th>
+            <th>Ht CM</th>
+            <th>wt</th>
+            <th>BMI</th>
+            <th>BSA</th>
+            <th>HTN</th>
+            <th>EF</th>
+            <th>Age</th>
+            <th>DM</th>
+            <th>ES</th>
+            <th>Pre HGB</th>
+            <th>post HGB</th>
+            <th>Pre ALT</th>
+            <th>Post ALT</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal()" style="float:right; cursor:pointer;">&times;</span>
+            <h2>Add New Patient</h2>
+            <!-- Add all patient information as in the excel -->
+            <input type="text" id="ptFileNumber" placeholder="Pt file number:">
+            <input type="text" id="hospitalName" placeholder="hospital name:">
+            <input type="date" id="date" placeholder="date:">
+            <input type="text" id="death" placeholder="DEATH:">
+            <input type="text" id="gender" placeholder="Gender:">
+            <input type="text" id="htCm" placeholder="Ht CM:">
+            <input type="text" id="wt" placeholder="wt:">
+            <input type="text" id="bmi" placeholder="BMI:">
+            <input type="text" id="bsa" placeholder="BSA:">
+            <input type="text" id="htn" placeholder="HTN:">
+            <input type="text" id="ef" placeholder="EF:">
+            <input type="text" id="age" placeholder="Age:">
+            <input type="text" id="dm" placeholder="DM:">
+            <input type="text" id="es" placeholder="ES:">
+            <input type="text" id="preHgb" placeholder="Pre HGB:">
+            <input type="text" id="postHgb" placeholder="Post HGB:">
+            <input type="text" id="preAlt" placeholder="Pre ALT:">
+            <input type="text" id="postAlt" placeholder="Post ALT:">
+            <div class="clearfix">
+                <button type="button" onclick="closeModal()" class="cancelbtn">Cancel</button>
+                <button type="button" onclick="saveNewPatient()" class="signupbtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeEditModal()" style="float:right; cursor:pointer;">&times;</span>
+            <h2>Edit Patient</h2>
+            <!-- Add all patient information as in the excel -->
+            <input type="text" id="editPtFileNumber" placeholder="Pt file number:">
+            <input type="text" id="editHospitalName" placeholder="hospital name:">
+            <input type="date" id="editDate" placeholder="date:">
+            <input type="text" id="editDeath" placeholder="DEATH:">
+            <input type="text" id="editGender" placeholder="Gender:">
+            <input type="text" id="editHtCm" placeholder="Ht CM:">
+            <input type="text" id="editWt" placeholder="wt:">
+            <input type="text" id="editBmi" placeholder="BMI:">
+            <input type="text" id="editBsa" placeholder="BSA:">
+            <input type="text" id="editHtn" placeholder="HTN:">
+            <input type="text" id="editEf" placeholder="EF:">
+            <input type="text" id="editAge" placeholder="Age:">
+            <input type="text" id="editDm" placeholder="DM:">
+            <input type="text" id="editEs" placeholder="ES:">
+            <input type="text" id="editPreHgb" placeholder="Pre HGB:">
+            <input type="text" id="editPostHgb" placeholder="Post HGB:">
+            <input type="text" id="editPreAlt" placeholder="Pre ALT:">
+            <input type="text" id="editPostAlt" placeholder="Post ALT:">
+            <div class="clearfix">
+                <button type="button" onclick="closeEditModal()" class="cancelbtn">Cancel</button>
+                <button type="button" onclick="saveEditedPatient()" class="signupbtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+    let excelData = []; // Store the Excel data
+    let currentEditIndex = -1; // Store the index of the row being edited
+
+    // Function to open the modal
+    function openModal() {
+        document.getElementById("myModal").style.display = "block";
+    }
+
+    // Function to close the modal
+    function closeModal() {
+        document.getElementById("myModal").style.display = "none";
+    }
+
+    // Function to open the edit modal
+    function openEditModal(index) {
+        currentEditIndex = index;
+        // Populate the edit modal with the data from the selected row
+        const patient = excelData[index];
+        document.getElementById("editPtFileNumber").value = patient[0] || '';
+        document.getElementById("editHospitalName").value = patient[1] || '';
+        document.getElementById("editDate").value = patient[2] || '';
+        document.getElementById("editDeath").value = patient[3] || '';
+        document.getElementById("editGender").value = patient[4] || '';
+        document.getElementById("editHtCm").value = patient[5] || '';
+        document.getElementById("editWt").value = patient[6] || '';
+        document.getElementById("editBmi").value = patient[7] || '';
+        document.getElementById("editBsa").value = patient[8] || '';
+        document.getElementById("editHtn").value = patient[9] || '';
+        document.getElementById("editEf").value = patient[10] || '';
+        document.getElementById("editAge").value = patient[11] || '';
+        document.getElementById("editDm").value = patient[12] || '';
+        document.getElementById("editEs").value = patient[13] || '';
+        document.getElementById("editPreHgb").value = patient[14] || '';
+        document.getElementById("editPostHgb").value = patient[15] || '';
+        document.getElementById("editPreAlt").value = patient[16] || '';
+        document.getElementById("editPostAlt").value = patient[17] || '';
+        document.getElementById("editModal").style.display = "block";
+    }
+
+    // Function to close the edit modal
+    function closeEditModal() {
+        document.getElementById("editModal").style.display = "none";
+    }
+
+    // Close the modal if the user clicks outside of it
+    window.onclick = function (event) {
+        if (event.target == document.getElementById("myModal")) {
+            closeModal();
+        } else if (event.target == document.getElementById("editModal")) {
+            closeEditModal();
+        }
+    }
+
+    // Function to save the edited patient data
+    function saveEditedPatient() {
+        if (confirm("Are you sure you want to save the changes?")) {
+            // Get the edited values from the edit modal
+            const ptFileNumber = document.getElementById("editPtFileNumber").value;
+            const hospitalName = document.getElementById("editHospitalName").value;
+            const date = document.getElementById("editDate").value;
+            const death = document.getElementById("editDeath").value;
+            const gender = document.getElementById("editGender").value;
+            const htCm = document.getElementById("editHtCm").value;
+            const wt = document.getElementById("editWt").value;
+            const bmi = document.getElementById("editBmi").value;
+            const bsa = document.getElementById("editBsa").value;
+            const htn = document.getElementById("editHtn").value;
+            const ef = document.getElementById("editEf").value;
+            const age = document.getElementById("editAge").value;
+            const dm = document.getElementById("editDm").value;
+            const es = document.getElementById("editEs").value;
+            const preHgb = document.getElementById("editPreHgb").value;
+            const postHgb = document.getElementById("editPostHgb").value;
+            const preAlt = document.getElementById("editPreAlt").value;
+            const postAlt = document.getElementById("editPostAlt").value;
+
+            // Update the corresponding row in the excelData array
+            excelData[currentEditIndex] = [ptFileNumber, hospitalName, date, death, gender, htCm, wt, bmi, bsa, htn, ef, age, dm, es, preHgb, postHgb, preAlt, postAlt];
+
+            // Repopulate the table with the updated data
+            populateTable(excelData);
+
+            // Close the edit modal
+            closeEditModal();
+
+            // Save the changes to the file (you'll need to implement the saveToFile function)
+            saveToFile(excelData);
+        }
+    }
+
+    // Function to delete a patient
+    function deletePatient(index) {
+        if (confirm("Are you sure you want to delete this patient?")) {
+            excelData.splice(index, 1); // Remove the patient from the array
+            populateTable(excelData); // Repopulate the table
+            saveToFile(excelData); // Save the changes to the file
+        }
+    }
+
+    // Function to save the new patient data to the file
+    function saveNewPatient() {
+        // Get the new patient data from the modal
+        const ptFileNumber = document.getElementById("ptFileNumber").value;
+        const hospitalName = document.getElementById("hospitalName").value;
+        const date = document.getElementById("date").value;
+        const death = document.getElementById("death").value;
+        const gender = document.getElementById("gender").value;
+        const htCm = document.getElementById("htCm").value;
+        const wt = document.getElementById("wt").value;
+        const bmi = document.getElementById("bmi").value;
+        const bsa = document.getElementById("bsa").value;
+        const htn = document.getElementById("htn").value;
+        const ef = document.getElementById("ef").value;
+        const age = document.getElementById("age").value;
+        const dm = document.getElementById("dm").value;
+        const es = document.getElementById("es").value;
+        const preHgb = document.getElementById("preHgb").value;
+        const postHgb = document.getElementById("postHgb").value;
+        const preAlt = document.getElementById("preAlt").value;
+        const postAlt = document.getElementById("postAlt").value;
+
+        // Add the new patient data to the excelData array
+        excelData.push([ptFileNumber, hospitalName, date, death, gender, htCm, wt, bmi, bsa, htn, ef, age, dm, es, preHgb, postHgb, preAlt, postAlt]);
+
+        // Repopulate the table with the new data
+        populateTable(excelData);
+
+        // Close the modal
+        closeModal();
+
+        // Save the changes to the file (you'll need to implement the saveToFile function)
+        saveToFile(excelData);
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+            excelData = jsonData.slice(1); // Store the Excel data without headers
+            populateTable(excelData);
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+
+    function populateTable(data) {
+        const table = document.getElementById('patientTable').getElementsByTagName('tbody')[0];
+        table.innerHTML = ""; // Clear existing table data
+
+        data.forEach((row, index) => {
+            let newRow = table.insertRow();
+            row.forEach(cellData => {
+                let cell = newRow.insertCell();
+                cell.textContent = cellData;
+            });
+
+            // Add Edit and Delete buttons
+            let actionsCell = newRow.insertCell();
+            actionsCell.innerHTML = `
+                <button class="edit-btn" onclick="openEditModal(${index})">Edit</button>
+                <button class="delete-btn" onclick="deletePatient(${index})">Delete</button>
+            `;
+        });
+    }
+
+    function saveToFile(data) {
+        if (confirm("Are you sure you want to save the changes to the file?")) {
+            // Convert the data back to a worksheet
+            const ws = XLSX.utils.aoa_to_sheet([
+                ["Pt file number", "hospital name", "date", "DEATH", "Gender", "Ht CM", "wt", "BMI", "BSA", "HTN", "EF", "Age", "DM", "ES", "Pre HGB", "post HGB", "Pre ALT", "Post ALT"]
+            ].concat(data));
+
+            // Create a new workbook
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+            // Generate a blob (binary large object) from the workbook
+            const wbout = XLSX.write(wb, {bookType:'xlsx',  type: 'binary'});
+
+            function s2ab(s) {
+                var buf = new ArrayBuffer(s.length);
+                var view = new Uint8Array(buf);
+                for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+                return buf;
+            }
+
+            // Create a download link and trigger the download
+            const blob = new Blob([s2ab(wbout)], {type:"application/octet-stream"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "updated_data.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    }
+</script>
+
+</body>
+</html>
